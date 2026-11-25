@@ -146,7 +146,7 @@ export default function App() {
         <div className="heroVeu" />
         <div className="heroTxt">
           <p className="eyebrow">Portfólio</p>
-          <h1>Imóveis para <span>tocar</span> e <span>explorar</span>.</h1>
+          <h1>Imóveis para<br /><em><span>tocar</span> e <span>explorar</span>.</em></h1>
           <p className="lead">Atta Touch no estande. Atta Web no navegador.</p>
           <a className="botao botaoRoxo" href="#projetos">Ver os {TODOS.length} projetos</a>
         </div>
