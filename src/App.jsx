@@ -23,9 +23,46 @@ const FILTROS = [
   { id: 'web', label: 'Atta Web', n: WEBS.length },
 ];
 
+const CATEGORIAS = [
+  { id: 'todos', label: 'Todos' },
+  { id: 'vertical', label: 'Verticais', sub: 'prédios' },
+  { id: 'horizontal', label: 'Horizontais', sub: 'loteamentos' },
+];
+const cat = (p) => p.categoria || 'vertical';
+
+/* um bloco (Atta Touch ou Atta Web) com o seu próprio filtro vertical / horizontal */
+function Grupo({ g, onAbrir }) {
+  const [c, setC] = useState('todos');
+  const itens = TODOS.filter(p => p.tipo === g.id);
+  const lista = c === 'todos' ? itens : itens.filter(p => cat(p) === c);
+  return (
+    <div className="grupo">
+      <div className="grupoCab">
+        <h2>{g.label}</h2>
+        <span>{g.txt}</span>
+        <div className="subfiltros">
+          {CATEGORIAS.map(k => {
+            const n = k.id === 'todos' ? itens.length : itens.filter(p => cat(p) === k.id).length;
+            return (
+              <button key={k.id} className={k.id === c ? 'ativo' : ''} disabled={!n} onClick={() => setC(k.id)}>
+                {k.label}{k.sub && <em> · {k.sub}</em>}<i>{n}</i>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      {lista.length ? (
+        <div className="grade" key={c}>
+          {lista.map(p => <Card key={p.id} p={p} onAbrir={onAbrir} />)}
+        </div>
+      ) : <p className="vazio">Nenhum projeto nesta categoria ainda.</p>}
+    </div>
+  );
+}
+
 const GRUPOS = [
   { id: 'touch', label: 'Atta Touch', txt: 'No estande, no totem e no tablet · toque para navegar aqui mesmo' },
-  { id: 'web', label: 'Atta Web', txt: 'O 3D no navegador · abre numa aba nova' },
+  { id: 'web', label: 'Atta Web', txt: 'O 3D no navegador, no mapa real da cidade · toque para navegar aqui mesmo' },
 ];
 
 /* janela com o Atta Touch rodando ao vivo (o app é desenhado em 1440 × 810 e se ajusta à janela) */
@@ -42,7 +79,7 @@ function Visor({ projeto, onClose }) {
       <div className="visorCaixa" onClick={(e) => e.stopPropagation()}>
         <div className="visorTopo">
           <div>
-            <small>Atta Touch</small>
+            <small>{projeto.tipo === 'web' ? 'Atta Web' : 'Atta Touch'}</small>
             <strong>{projeto.nome}</strong>
           </div>
           <div className="visorAcoes">
@@ -51,7 +88,12 @@ function Visor({ projeto, onClose }) {
           </div>
         </div>
         <div className="visorTela">
-          <iframe src={projeto.url} title={projeto.nome} allow="fullscreen; autoplay; xr-spatial-tracking; accelerometer; gyroscope" allowFullScreen />
+          <iframe
+            src={projeto.embed || projeto.url}
+            title={projeto.nome}
+            allow="fullscreen *; autoplay *; screen-wake-lock *; geolocation *; accelerometer *; gyroscope *; xr-spatial-tracking *; vr *; web-share *"
+            allowFullScreen
+          />
         </div>
       </div>
     </div>
@@ -65,7 +107,7 @@ function Card({ p, onAbrir }) {
       <span className="cardImg">
         <img src={`/img/projetos/${p.id}.webp`} alt={p.nome} />
         <span className={`selo ${web ? 'seloWeb' : ''}`}>{web ? 'Atta Web' : 'Atta Touch'}</span>
-        <span className="cardAcao">{web ? <>Abrir <Seta /></> : <><Play /> Explorar</>}</span>
+        <span className="cardAcao"><Play /> Explorar</span>
       </span>
       <span className="cardInfo">
         <strong>{p.nome}</strong>
@@ -73,9 +115,7 @@ function Card({ p, onAbrir }) {
       </span>
     </>
   );
-  return web
-    ? <a className="card" href={p.url} target="_blank" rel="noreferrer">{miolo}</a>
-    : <button className="card" onClick={() => onAbrir(p)}>{miolo}</button>;
+  return <button className="card" onClick={() => onAbrir(p)}>{miolo}</button>;
 }
 
 export default function App() {
@@ -89,7 +129,10 @@ export default function App() {
     <>
       <header className="topo">
         <img className="logo" src="/img/atta-logo.png" alt="ATTA3D" />
-        <a href="https://atta3d.com.br" target="_blank" rel="noreferrer" className="botao botaoVidro">atta3d.com.br <Seta /></a>
+        <div className="topoAcoes">
+          <a href="https://atta3d.com.br" target="_blank" rel="noreferrer" className="botao botaoVidro">atta3d.com.br <Seta /></a>
+          <a href="/api/sair" className="sair">Sair</a>
+        </div>
       </header>
 
       <section className="hero">
@@ -119,15 +162,7 @@ export default function App() {
         </div>
         {/* em "Todos", os dois produtos aparecem em blocos separados, cada um com seu título */}
         {GRUPOS.filter(g => filtro === 'todos' || g.id === filtro).map(g => (
-          <div key={`${filtro}-${g.id}`} className="grupo">
-            <div className="grupoCab">
-              <h2>{g.label}</h2>
-              <span>{g.txt}</span>
-            </div>
-            <div className="grade">
-              {TODOS.filter(p => p.tipo === g.id).map(p => <Card key={p.id} p={p} onAbrir={setAberto} />)}
-            </div>
-          </div>
+          <Grupo key={`${filtro}-${g.id}`} g={g} onAbrir={setAberto} />
         ))}
       </section>
 
